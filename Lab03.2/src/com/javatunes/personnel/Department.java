@@ -14,7 +14,7 @@ import java.util.Collection;
 public class Department {
     private String name;
     private String location;
-    private Collection<Employee> employees = new ArrayList<>();
+    private final Collection<Employee> employees = new ArrayList<>();
 
     public Department() {
     }
@@ -25,15 +25,11 @@ public class Department {
     }
 
     public void listEmployees() {
-        for (Employee emp : employees) {
-            System.out.println(emp);
-        }
+        employees.forEach(System.out::println);
     }
 
     public void workEmployees() {
-        for (Employee emp : employees) {
-            emp.work();
-        }
+        employees.forEach(Employee::work);
     }
 
     /**
@@ -42,9 +38,7 @@ public class Department {
      */
     public void payEmployees() {
         // DONE
-        for (Employee emp : employees) {
-            emp.pay();
-        }
+        employees.forEach(Employee::pay);
     }
 
     // helper method to add an Employee to the collection
