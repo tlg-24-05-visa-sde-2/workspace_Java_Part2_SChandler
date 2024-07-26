@@ -1,13 +1,9 @@
 package com.duckrace;
 
-import java.io.IOException;
+import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.TreeMap;
+import java.util.*;
 
 /*
  * This is a lookup table of ids to student names.
@@ -42,77 +38,119 @@ import java.util.TreeMap;
  *   17       17    Dom        1    DEBIT_CARD
  */
 
+public class Board implements Serializable{
+    private static final String DATA_FILE_PATH = "data/board.dat";
+    private static final String CONF_FILE_PATH = "conf/student-ids.csv";
 
-public class Board {
+    /*
+     *  If data/board.dat exists, the application has been run before, at least once.
+     *  Therefore, re-create the Board obj from that binary file.
+     *
+     *  If file is not there, this is the very first time the app has been run.
+     *  Therefore, create and return new Board.
+     */
+    public static Board getInstance() {
+        Board board = null;
+
+        if(Files.exists(Path.of(DATA_FILE_PATH))){
+            try (ObjectInputStream in = new ObjectInputStream(new FileInputStream(DATA_FILE_PATH))) {
+                board = (Board) in.readObject();
+            }
+            catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+        else{
+            board = new Board();
+        }
+        return board;
+    }
+
     private final Map<Integer,String> studentIdMap = loadStudentIdMap();
     private final Map<Integer,DuckRacer> racerMap  = new TreeMap<>();
 
-    /*
-     * Updates the board (racerMap) by making a DuckRacer win().
-     *
-     * This could mean fetching an existing DuckRacer from racerMap,
-     * or we might need to create a "new DuckRacer()", put() it in the map,
-     * and then make it win().  Either way, it needs to win().
-     */
-    public void update(int id, Reward reward) {
-        DuckRacer racer = null;
+    //private ctor - prevent instantiation from outside - only getInstance() can do this
+    private Board(){
 
-        if (racerMap.containsKey(id)) {                       // already in racerMap
-            racer = racerMap.get(id);                         // fetch it
-        }
-        else {
-            racer = new DuckRacer(id, studentIdMap.get(id));  // not in map, create new
-            racerMap.put(id, racer);                          // insert it
-        }
-        racer.win(reward);
     }
 
     /*
-     * TODO: render the data as we see it in the "real" application.
-     * See Session 5 in Java Part 1 manual, Formatted Output.
+     * updates the board by making a duckracer win()
+     *
+     * this could mean fetching an existing duckracer from racermap,
+     * or we might need to create a new duckRacer() put() it in the map
+     * and then make it win()
+     *
+     * either way it needs to win()
      */
-    public void show() {
+
+    public void update(int id, Reward reward){
+        DuckRacer racer = null;
+
+        if(racerMap.containsKey(id)){
+            racer = racerMap.get(id);
+        }
+        else{
+            racer = new DuckRacer(id, studentIdMap.get(id));
+            racerMap.put(id, racer);
+        }
+        racer.win(reward);
+        save();
+    }
+
+    // TODO render the data as we see it in the real application
+    public void show(){
+        /*
+         * maybe an if else here
+         * if(racerMap.isEmpty())
+         *      there are currently no results to show
+         * else
+         *      do the work below
+         */
+
         Collection<DuckRacer> racers = racerMap.values();
 
         String header = """
+                
                 Duck Race Results
                 =================
                 
-                id    name      wins    rewards
-                --    ----      ----    -------
-                
-                """;
-        System.out.println(header);
+                id  name        wins    rewards
+                --  ----        ----    -------""";
 
-        for (DuckRacer racer : racers) {
-            System.out.printf("%d    %s    %d    %s\n",
-                    racer.getId(), racer.getName(), racer.getWins(), racer.getRewards());
+        System.out.println(header);
+        for(DuckRacer racer : racers){
+            System.out.printf("%s   %s      %s      %s\n", racer.getId(), racer.getName(), racer.getWins(), racer.getRewards());
         }
     }
 
-    // FOR TESTING ONLY
-    void dumpStudentIdMap() {
+    private void save() {
+        try(ObjectOutputStream out = new ObjectOutputStream(new FileOutputStream(DATA_FILE_PATH))){
+            out.writeObject(this);
+        }
+        catch(Exception e){
+            e.printStackTrace();
+        }
+    }
+
+    void dumpStudentIdMap(){
         System.out.println(studentIdMap);
     }
 
-    private Map<Integer,String> loadStudentIdMap() {
-        Map<Integer,String> map = new HashMap<>();
-
-        // read all lines from CSV file, and process each one into an integer and a string
+    private Map<Integer, String> loadStudentIdMap() {
+        Map<Integer, String> map = new HashMap<>();
         try {
-            List<String> lines = Files.readAllLines(Path.of("conf/student-ids.csv"));
-
-            // for each line, "split" the string into "tokens"
-            for (String line : lines) {
-                String[] tokens = line.split(",");  // "1" and "Bullen"
+            List<String> lines = Files.readAllLines(Path.of(CONF_FILE_PATH));
+            for(String line : lines){
+                String[] tokens = line.split(",");
                 Integer id = Integer.valueOf(tokens[0]);
                 String name = tokens[1];
                 map.put(id, name);
             }
-        }
-        catch (IOException e) {
+        } catch (IOException e) {
             e.printStackTrace();
         }
         return map;
     }
+
 }
