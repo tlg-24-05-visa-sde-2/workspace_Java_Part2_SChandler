@@ -1,11 +1,10 @@
 package com.crisp;
 
-import java.sql.SQLOutput;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 
-public class RadishSortTest {
+public class RadishSortTestLambda {
     public static void main(String[] args) {
         List<Radish> radishes = new ArrayList<Radish>();
 
@@ -19,28 +18,24 @@ public class RadishSortTest {
         System.out.println();
 
         System.out.println("Sort by natural order (size)");
+        radishes.sort(Comparator.comparingDouble(Radish::getSize));
         dump(radishes);
         System.out.println();
 
-        System.out.println("Sort by SproutsOnTop, via Comparator");
-        radishes.sort(new RadishSproutsOnTopComparator());
+        System.out.println("Sort by SproutsOnTop, via lambda for the Comparator");
+        radishes.sort((r1, r2) -> Integer.compare(r1.getSproutsOnTop(), r2.getSproutsOnTop()));
         dump(radishes);
         System.out.println();
 
-        System.out.println("Sort by tailLength, via anonymous Comparator class");
-        radishes.sort(new Comparator<Radish>() {
-            @Override
-            public int compare(Radish r1, Radish r2) {
-                return Double.compare(r1.getTailLength(), r2.getTailLength());
-            }
-        });
+        System.out.println("Sort by tailLength, via lambda for the Comparator");
+        radishes.sort((r1, r2) -> Double.compare(r1.getTailLength(), r2.getTailLength()));
         dump(radishes);
         System.out.println();
     }
+
     private static void dump(List<Radish> radishList) {
         for (Radish radish: radishList) {
             System.out.println(radish);    // toString() automatically called
         }
-
     }
 }
